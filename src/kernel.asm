@@ -17,7 +17,10 @@ _start:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    ;mov ss, ax
+    ;Tried something else
+    mov bx, DATA_SEG
+    mov ss, bx
+    ;
     mov ebp, 0x200000
     mov esp, ebp 
     call kernel_main
