@@ -8,7 +8,9 @@ KERNEL_BIN = ./bin/kernel.bin
 LINKER_LD = ./src/linker.ld
 INCLUDES = -I./src
 FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
-
+KERNEL_C_OBJ = ./build/kernel.c.o
+KERNEL_C = ./src/kernel.c
+OBJ_KERNEL_FILES = $(KERNEL_OBJ) $(KERNEL_C_OBJ)
 
 all:$(BOOT_BIN) $(KERNEL_BIN)
 	rm -rf $(OS_BIN)
@@ -17,15 +19,18 @@ all:$(BOOT_BIN) $(KERNEL_BIN)
 	dd if=/dev/zero bs=512 count=100 >> $(OS_BIN)
 	
 
-$(KERNEL_BIN): $(KERNEL_OBJ)
-	i686-elf-ld -g -relocatable $(KERNEL_OBJ) -o $(KER_FULL_OBJ)
-	i686-elf-gcc -T $(LINKER_LD) -o $(KERNEL_BIN) -ffreestanding -O0 -nostdlib $(KER_FULL_OBJ)  
+$(KERNEL_BIN): $(OBJ_KERNEL_FILES)
+	i686-elf-ld -g -relocatable $(OBJ_KERNEL_FILES) -o $(KER_FULL_OBJ)
+	i686-elf-gcc $(FLAGS) -T $(LINKER_LD) -o $(KERNEL_BIN) -ffreestanding -O0 -nostdlib $(KER_FULL_OBJ)  
 
 $(BOOT_BIN): $(BOOT_ASM)
 	nasm -f bin $(BOOT_ASM) -o $(BOOT_BIN)
 
 $(KERNEL_OBJ): $(KERNEL_ASM)
 	nasm -f elf -g $(KERNEL_ASM) -o $(KERNEL_OBJ)
+
+$(KERNEL_C_OBJ): $(KERNEL_C)
+	i686-elf-gcc $(INCLUDES) $(FLAGS) -c $(KERNEL_C) -o $(KERNEL_C_OBJ)
 
 clean:
 	rm -rf ./bin/*.bin
