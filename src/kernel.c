@@ -1,6 +1,7 @@
-#include "./kernel.h"
+#include "./includes/kernel.h"
 #include <stdint.h>
 #include <stddef.h>
+#include "./includes/idt.h"
 
 enum terminal_colors{BLACK, BLUE, GREEN, CYAN, RED, PURPLE, BROWN, GREY, DARK_GRAY, L_BLUE, L_GREEN, L_CYAN, L_RED, L_PURPLE, YELLOW, WHITE};
 //value of colors
@@ -67,6 +68,7 @@ void terminal_print_str(char* str){
 void kernel_main(){
     terminal_init();
     set_color(WHITE);
+    init_intr_table();
     char str[40] = "Hello\n\nmaster\nAt your\n   service";
     terminal_print_str(str);
     return;

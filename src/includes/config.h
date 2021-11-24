@@ -1,0 +1,8 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define MY_OS_INTERRUPT_NUM 512
+#define CODE_SEG_SELECTOR 0x08
+#define DATA_SEG_SELECTOR 0x10
+
+#endif
