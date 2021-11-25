@@ -16,8 +16,10 @@ IDT_ASM = ./src/idt/idt.asm
 IDT_ASM_O = ./build/idt/idt.asm.o
 MEMORY_C = ./src/memory/memory.c
 MEMORY_O = ./build/memory/memory.o
+IO_ASM = ./src/io/io.asm
+IO_ASM_O = ./build/io/io.asm.o
 
-OBJ_KERNEL_FILES = $(KERNEL_OBJ) $(KERNEL_C_OBJ) $(IDT_ASM_O) $(IDT_O) $(MEMORY_O)
+OBJ_KERNEL_FILES = $(KERNEL_OBJ) $(KERNEL_C_OBJ) $(IDT_ASM_O) $(IDT_O) $(MEMORY_O) $(IO_ASM_O)
 
 
 all:$(BOOT_BIN) $(KERNEL_BIN)
@@ -49,8 +51,12 @@ $(IDT_O): $(IDT_C)
 $(MEMORY_O): $(MEMORY_C)
 	i686-elf-gcc $(INCLUDES) $(FLAGS) -c $(MEMORY_C) -o $(MEMORY_O)
 
+$(IO_ASM_O): $(IO_ASM)
+	nasm -f elf -g $(IO_ASM) -o $(IO_ASM_O)
+
 clean:
 	rm -rf ./bin/*.bin
 	rm -rf ./build/*.o
 	rm -rf ./build/idt/*.o
 	rm -rf ./build/memory/*.o
+	rm -rf ./build/io/*.o
