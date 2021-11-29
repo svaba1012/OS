@@ -7,6 +7,7 @@
 
 void kernel_main();
 void terminal_print_str(char* str);
+void terminal_init();
 
 
 #endif

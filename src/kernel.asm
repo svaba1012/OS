@@ -6,12 +6,8 @@ extern kernel_main
 CODE_SEG equ 0x08
 DATA_SEG equ 0x10
 
-_start:
-    ;A20 line enabled
-    in al, 0x92
-    or al, 2
-    out 0x92, al
 
+_start:
     mov ax, CODE_SEG
     mov ds, ax
     mov es, ax
@@ -21,10 +17,27 @@ _start:
     mov bx, DATA_SEG
     mov ss, bx
     ;
-    mov ebp, 0x200000
-    mov esp, ebp 
+    mov ebp, 0x1000000
+    mov esp, ebp
+
+    ;A20 line enabled
+    in al, 0x92
+    or al, 2
+    out 0x92, al
+
+    ;init pic 
+    cli
+    mov al, 00010001b
+    out 0x20, al; seting flags in pic (programmable interrupt )
+    mov al, 0x20
+    out 0x21, al; seting 0x20 as starting interrupt in irq in pic
+    mov al, 00000001b;
+    out 0x21, al; more flags
+    ;sti
+
     call kernel_main
     jmp $
+
 
 
 times 512-($ - $$) db 0

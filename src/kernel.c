@@ -69,7 +69,8 @@ void kernel_main(){
     terminal_init();
     set_color(WHITE);
     init_intr_table();
-    char str[40] = "Hello\n\nmaster\nAt your\n   service";
+    char str[40] = "Hello master at your service\n";
+    enable_interrupts();
     terminal_print_str(str);
     return;
 }
