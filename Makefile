@@ -18,6 +18,9 @@ IDT_ASM_O = ./build/idt/idt.asm.o
 MEMORY_O = ./build/memory/memory.o
 #IO_ASM = ./src/io/io.asm
 IO_ASM_O = ./build/io/io.asm.o
+TERMINAL_O = ./build/io/terminal/terminal.o
+HEAP_O = ./build/memory/heap/heap.o
+KHEAP_O = ./build/memory/heap/kheap.o
 
 BOOT_BIN = ./bin/boot.bin
 OS_BIN = ./bin/os.bin
@@ -27,7 +30,7 @@ LINKER_LD = ./src/linker.ld
 
 
 
-OBJ_KERNEL_FILES = $(KERNEL_ASM_OBJ) $(KERNEL_OBJ) $(IDT_ASM_O) $(IDT_O) $(MEMORY_O) $(IO_ASM_O)
+OBJ_KERNEL_FILES = $(KERNEL_ASM_OBJ) $(KERNEL_OBJ) $(IDT_ASM_O) $(IDT_O) $(MEMORY_O) $(IO_ASM_O) $(TERMINAL_O) $(HEAP_O) $(KHEAP_O)
 #OBJ_KERNEL_FILES += $(wildcard ./build/*.o)
 #OBJ_KERNEL_FILES += $(wildcard ./build/*/*.o)
 #OBJ_KERNEL_FILES += $(wildcard ./build/*/*.asm.o)

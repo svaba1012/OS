@@ -1,8 +1,8 @@
-#include "../includes/idt.h"
-#include "../includes/config.h"
-#include "../includes/kernel.h"
-#include "../includes/memory.h"
-#include "../includes/io.h"
+#include "idt.h"
+#include "config.h"
+#include "memory.h"
+#include "io.h"
+#include "terminal.h"
 
 struct idt_desc intr_desc[MY_OS_INTERRUPT_NUM];
 struct idtr_desc intr_table;
@@ -18,17 +18,17 @@ void no_int_handler(void){
 }
 
 void int0_handler(void){
-    terminal_print_str("\nDivide by zero\n");
+    print("\nDivide by zero\n");
     out_byte(PIC1, PIC_EOI);
 }
 
 void int0x21_handler(void){
-    terminal_print_str("\nKey pressed\n");
+    print("\nKey pressed\n");
     out_byte(PIC1, PIC_EOI);
 }
 
 void int0x20_handler(void){
-    terminal_print_str("\nTimer interrupt\n");
+    print("\nTimer interrupt\n");
     //can be used for task switching
     out_byte(PIC1, PIC_EOI);
 }

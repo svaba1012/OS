@@ -1,6 +1,7 @@
 #ifndef IDT_H
 #define IDT_H
 #include <stdint.h>
+#include "terminal.h"
 
 
 #define PIC1 0x20   // master pic
