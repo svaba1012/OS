@@ -4,6 +4,7 @@
 //error codes
 
 #define ALL_OK 0
-#define ERROR_IO 1 
+#define EIO 1 
+#define EINVARG 2
 
 #endif

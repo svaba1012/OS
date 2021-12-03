@@ -28,7 +28,7 @@ void int0x21_handler(void){
 }
 
 void int0x20_handler(void){
-    print("\nTimer interrupt\n");
+    //print("\nTimer interrupt\n");
     //can be used for task switching
     out_byte(PIC1, PIC_EOI);
 }
@@ -43,7 +43,7 @@ void make_interrupt(uint16_t num, uint32_t* adress){
 }
 
 void init_intr_table(void){
-    _memset(intr_desc, 0, sizeof(intr_desc));
+    memset(intr_desc, 0, sizeof(intr_desc));
     intr_table.limit = sizeof(intr_desc) - 1;
     intr_table.base = (uint32_t)intr_desc;
     for(uint16_t i = 0; i < MY_OS_INTERRUPT_NUM; i++){
