@@ -78,5 +78,6 @@ clean:
 	rm -rf ./bin/*.bin
 	rm -rf ./build/*.o
 	rm -rf ./build/*/*.o
+	rm -rf ./build/*/*/*.o
 	
 
