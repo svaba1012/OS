@@ -2,6 +2,7 @@
 #include "kheap.h"
 #include "config.h"
 #include "terminal.h"
+#include "memory.h"
 
 struct heap kernel_heap;
 struct heap_table kernel_heap_table;
@@ -20,6 +21,12 @@ void kheap_int(){
             ;
         }
     } 
+}
+
+void* kzalloc(size_t bytes){
+    void* ptr = kmalloc(bytes);
+    memset(ptr, 0x00, bytes);
+    return ptr;
 }
 
 void* kmalloc(size_t bytes){
