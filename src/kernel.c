@@ -6,7 +6,9 @@
 #include "kheap.h"
 #include "disk.h"
 #include "paging.h"
+#include "pathparser.h"
 
+struct path_root* test_root;
 struct paging_4gb_chunk* kernel_chunk;
 
 void kernel_main(){
@@ -19,6 +21,7 @@ void kernel_main(){
     
     disk_init();
     
+
     kernel_chunk = set_4gb_chunk(PAGING_PAGE_WRITEABLE | PAGING_PAGE_PRESENT | PAGING_PAGE_ACCESS_FOR_ALL);
     paging_switch(paging_get_directory_from_4gb_chunk(kernel_chunk));
     enable_paging();

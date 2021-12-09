@@ -17,7 +17,8 @@ _start:
     mov bx, DATA_SEG
     mov ss, bx
     ;
-    mov ebp, 0xffffff
+    mov eax, 0x00200000
+    mov ebp, eax
     mov esp, ebp
 
     ;A20 line enabled

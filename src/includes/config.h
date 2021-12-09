@@ -16,6 +16,8 @@
 #define MY_OS_HEAP_BLOCK_TAKEN_ONLY 0x41
 #define MY_OS_HEAP_BLOCK_TAKEN_LAST 0x01
 
+#define MY_OS_PATH_MAX_LEN 150
+
 
 
 #endif
