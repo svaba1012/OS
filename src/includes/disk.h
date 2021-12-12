@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define MY_OS_DISK_SECTOR_SIZE 512;
+#define MY_OS_DISK_SECTOR_SIZE 512
 
 typedef uint32_t MY_OS_DISK_TYPE;
 enum DISK_TYPES{MY_OS_DISK_TYPE_REAL};

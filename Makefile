@@ -29,15 +29,11 @@ KERNEL_BIN = ./bin/kernel.bin
 LINKER_LD = ./src/linker.ld
 
 
-
+#all object files in project
 OBJ_KERNEL_FILES = $(KERNEL_ASM_OBJ) $(KERNEL_OBJ) $(IDT_ASM_O) $(IDT_O) \
  $(MEMORY_O) $(IO_ASM_O) $(TERMINAL_O) $(HEAP_O) $(KHEAP_O) ./build/memory/paging/paging.o \
  ./build/io/disk/disk.o ./build/memory/paging/paging.asm.o ./build/string/string.o \
-  ./build/filesystem/pathparser.o
- 
-#OBJ_KERNEL_FILES += $(wildcard ./build/*.o)
-#OBJ_KERNEL_FILES += $(wildcard ./build/*/*.o)
-#OBJ_KERNEL_FILES += $(wildcard ./build/*/*.asm.o)
+  ./build/filesystem/pathparser.o  ./build/filesystem/disk_streamer.o 
 
 .PHONY: all clean
 
@@ -54,24 +50,6 @@ $(KERNEL_BIN): $(OBJ_KERNEL_FILES)
 
 $(BOOT_BIN): $(BOOT_ASM)
 	nasm -f bin $^ -o $@
-
-#$(KERNEL_ASM_OBJ): $(KERNEL_ASM)
-#	nasm -f elf -g $^ -o $@
-
-#$(IDT_ASM_O): $(IDT_ASM)
-#	nasm -f elf -g $^ -o $@
-
-#$(KERNEL_OBJ): $(KERNEL_C)
-#i686-elf-gcc $(INCLUDES) $(FLAGS) -c $^ -o $@
-
-#$(IDT_O): $(IDT_C)
-#i686-elf-gcc $(INCLUDES) $(FLAGS) -c $^ -o $@
-
-#$(MEMORY_O): $(MEMORY_C)
-#i686-elf-gcc $(INCLUDES) $(FLAGS) -c $^ -o $@
-
-#$(IO_ASM_O): $(IO_ASM)
-#	nasm -f elf -g $^ -o $@
 
 $(BUILD_DIR)%.o: $(SRC_DIR)%.c
 	i686-elf-gcc $(INCLUDES) $(FLAGS) -c $< -o $@
