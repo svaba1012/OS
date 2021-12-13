@@ -41,8 +41,11 @@ all:$(BOOT_BIN) $(KERNEL_BIN)
 	rm -rf $(OS_BIN)
 	dd if=$(BOOT_BIN) >> $(OS_BIN)
 	dd if=$(KERNEL_BIN) >> $(OS_BIN)
-	dd if=/dev/zero bs=512 count=100 >> $(OS_BIN)
-	
+	dd if=/dev/zero bs=1048510 count=16 >> $(OS_BIN)
+	sudo mount -t vfat ./bin/os.bin /mnt/d
+	sudo cp ./src/file.txt /mnt/d
+	sudo umount /mnt/d
+
 
 $(KERNEL_BIN): $(OBJ_KERNEL_FILES)
 	i686-elf-ld -g -relocatable $^ -o $(KER_FULL_OBJ)
