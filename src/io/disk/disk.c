@@ -35,7 +35,7 @@ void disk_init(){
     memset(&disk, 0x00, sizeof(struct disk));
     disk.type = MY_OS_DISK_TYPE_REAL;
     disk.sectors_size = MY_OS_DISK_SECTOR_SIZE;
-
+    disk.filesystem = fs_resolve(&disk);
 }
 
 struct disk* get_disk_by_index(uint32_t i){

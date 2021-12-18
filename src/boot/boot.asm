@@ -44,7 +44,7 @@ step2:
     mov sp, 0x7c00
     sti ; Enables Interrupts
 
-.load_protected:
+.load_protected:    ;switch to 32 bit mod
     cli
     lgdt[gdt_descriptor]
     mov eax, cr0
@@ -53,12 +53,12 @@ step2:
     jmp CODE_SEG:load32
 
 ; GDT
-gdt_start:
+gdt_start: ;global descriptor table
 gdt_null:
     dd 0x0
     dd 0x0
 
-; offset 0x8
+; offset 0x8, code segment descriptor
 gdt_code:     ; CS SHOULD POINT TO THIS
     dw 0xffff ; Segment limit first 0-15 bits
     dw 0      ; Base first 0-15 bits
@@ -67,7 +67,7 @@ gdt_code:     ; CS SHOULD POINT TO THIS
     db 11001111b ; High 4 bit flags and the low 4 bit flags
     db 0        ; Base 24-31 bits
 
-; offset 0x10
+; offset 0x10, data segment descriptor
 gdt_data:      ; DS, SS, ES, FS, GS
     dw 0xffff ; Segment limit first 0-15 bits
     dw 0      ; Base first 0-15 bits
@@ -87,8 +87,8 @@ gdt_descriptor:
     mov eax, 1
     mov ecx, 100
     mov edi, 0x0100000
-    call ata_lba_read
-    jmp CODE_SEG:0x0100000
+    call ata_lba_read   ;Reading ecx number of sectors starting from eax from hard to memory at address edi 
+    jmp CODE_SEG:0x0100000  ;jumping to kernel
 
 ata_lba_read:
     mov ebx, eax, ; Backup the LBA
@@ -151,5 +151,5 @@ ata_lba_read:
 
 
 
-times 510-($ - $$) db 0
-dw 0xAA55
+times 510-($ - $$) db 0     ;Fill with zero till 510 bytes
+dw 0xAA55   ;Boot magic number

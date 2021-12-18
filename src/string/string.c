@@ -2,6 +2,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+//basic string functionality
+
+
 uint32_t strlen(char* str){
     char* ptr = str;
     while(*ptr){

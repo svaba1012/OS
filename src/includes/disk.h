@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "file.h"
 
 #define MY_OS_DISK_SECTOR_SIZE 512
 
@@ -12,6 +13,7 @@ enum DISK_TYPES{MY_OS_DISK_TYPE_REAL};
 struct disk{
     MY_OS_DISK_TYPE type;
     uint32_t sectors_size;
+    struct filesystem* filesystem;
 };
 
 uint32_t read_disk_block(struct disk* disk_addr, uint32_t lba, uint32_t num_of_sec, void* buf);

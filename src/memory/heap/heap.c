@@ -4,11 +4,11 @@
 #include "memory.h"
 #include "terminal.h"
 
+//heap and memory allocation functionality
+
 int heap_create(struct heap* heap, void* start, void* end, struct heap_table* table){
-    //int16_t res = 0;
     if(((uint32_t)start % MY_OS_HEAP_BLOCK_SIZE != 0) && ((uint32_t)start % MY_OS_HEAP_BLOCK_SIZE != 0)){
         //check if the starting and end adresses are aligned
-        //("Juhu\n");
         return -EINVARG;
     }
     size_t heap_block_num = ((size_t)(end - start) / MY_OS_HEAP_BLOCK_SIZE);

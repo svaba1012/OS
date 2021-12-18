@@ -8,7 +8,7 @@ DATA_SEG equ 0x10
 
 
 _start:
-    mov ax, CODE_SEG
+    mov ax, CODE_SEG    ;setting segment registers
     mov ds, ax
     mov es, ax
     mov fs, ax
@@ -17,7 +17,7 @@ _start:
     mov bx, DATA_SEG
     mov ss, bx
     ;
-    mov eax, 0x00200000
+    mov eax, 0x00200000     ;init stack
     mov ebp, eax
     mov esp, ebp
 
@@ -26,7 +26,7 @@ _start:
     or al, 2
     out 0x92, al
 
-    ;init pic 
+    ;init programable interupt contoler
     cli
     mov al, 00010001b
     out 0x20, al; seting flags in pic (programmable interrupt )
@@ -36,9 +36,9 @@ _start:
     out 0x21, al; more flags
     ;sti
 
-    call kernel_main
+    call kernel_main    ;jumping to c code, kernel.c
     jmp $
 
 
 
-times 512-($ - $$) db 0
+times 512-($ - $$) db   ;filling sector with zeros

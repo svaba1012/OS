@@ -1,6 +1,8 @@
 #include "memory.h"
 #include <stdint.h>
 
+//basic memory functionality
+
 void* memset(void* ptr, int c, size_t len){
     char *p = (char*) ptr;
     for(int i = 0; i < len; i++){
@@ -9,7 +11,9 @@ void* memset(void* ptr, int c, size_t len){
     return ptr;
 }
 
-int32_t memcmp(void* m1, void* m2, uint32_t maxlen){
+
+
+int32_t memcmp(void* m1, void* m2, uint32_t maxlen){    //for comaparing two arrays
     char* ptr1 = (char*) m1;
     char* ptr2 = (char*) m2;
     for(uint32_t i = 0; i < maxlen; i++){
