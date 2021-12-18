@@ -30,3 +30,11 @@ uint32_t char_to_numeric(char c){
     return c - '0';
 }
 
+char* strcpy(char* dest, char* src){
+    char* tmp = dest;
+    while(*src){
+        *dest++ = *src++;
+    }
+    *dest = 0;
+    return tmp;
+}

@@ -4,12 +4,10 @@
 #include "terminal.h"
 #include "status.h"
 #include "kheap.h"
+#include "fat16.h"
 
 struct filesystem* filesystems[MY_OS_MAX_FILESYSTEMS];
 struct file_descriptor* file_descriptors[MY_OS_MAX_FILE_DESCRIPTORS];
-
-
-
 
 
 struct filesystem** get_free_filesystem(){
@@ -35,7 +33,7 @@ void insert_filesystem(struct filesystem* new_fs){
 
 void filesystem_init(){
     memset(filesystems, 0, MY_OS_MAX_FILESYSTEMS);
-    //insert_filesystem(fat16_init());
+    insert_filesystem(fat16_init());
     memset(file_descriptors, 0, MY_OS_MAX_FILE_DESCRIPTORS);
 }
 

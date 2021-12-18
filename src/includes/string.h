@@ -9,5 +9,6 @@ bool is_numeric(char c);
 uint32_t char_to_numeric(char c);
 uint32_t strnlen(char* str, uint32_t max_len);
 uint32_t strlen(char* str);
+char* strcpy(char* dest, char* src);
 
 #endif

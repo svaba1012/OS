@@ -8,6 +8,7 @@
 #include "paging.h"
 #include "pathparser.h"
 #include "disk_streamer.h"
+#include "file.h"
 
 struct paging_4gb_chunk* kernel_chunk;
 struct disk_streamer* stream;
@@ -17,6 +18,8 @@ void kernel_main(){
     set_color(WHITE);
     
     kheap_int();
+    
+    filesystem_init();
     
     init_intr_table();
     
