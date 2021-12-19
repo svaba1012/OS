@@ -13,7 +13,9 @@ enum DISK_TYPES{MY_OS_DISK_TYPE_REAL};
 struct disk{
     MY_OS_DISK_TYPE type;
     uint32_t sectors_size;
+    uint32_t id;
     struct filesystem* filesystem;
+    void* fs_private;
 };
 
 uint32_t read_disk_block(struct disk* disk_addr, uint32_t lba, uint32_t num_of_sec, void* buf);

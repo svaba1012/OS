@@ -8,24 +8,24 @@ jmp short start
 nop
 ;FAT16 header
 OEMIdentifier       db 'MYOS    '
-BytesPerSector      dw 0x200
+BytesPerSector      dw 0x0200
 SectorsPerCluster   db 0x80
 ReservedSectors     dw 200
 FATCopies           db 0x02
-RootDirEntry        dw 0x40
+RootDirEntry        dw 0x0040
 NumSectors          dw 0x00
 MediaType           db 0xF8
-SectorsPerFAT       dw 0x100
-SectrosPerTrack     dw 0x20
-NumberOfHeads       dw 0x40
+SectorsPerFAT       dw 0x0100
+SectrosPerTrack     dw 0x0020
+NumberOfHeads       dw 0x0040
 HiddenSectors       dd 0x00
-SectorsBig          dd 0x773594
+SectorsBig          dd 0x00773594
 
 ;Extended BPB 
 DriveNum            db 0x80
 WinNTBit            db 0x00 
 Signature           db 0x29
-VolumeID            dd 0xD105
+VolumeID            dd 0x0000D105
 VolumeIDString      db 'MY OS BOOT '
 SystemIDString      db 'FAT16   '
 
