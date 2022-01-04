@@ -45,6 +45,7 @@ all:$(BOOT_BIN) $(KERNEL_BIN)
 	dd if=/dev/zero bs=1048510 count=16 >> $(OS_BIN)
 	sudo mount -t vfat ./bin/os.bin /mnt/d
 	sudo cp ./src/file.txt /mnt/d
+	sudo cp  -r ./src/dir /mnt/d
 	sudo umount /mnt/d
 
 

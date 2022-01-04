@@ -5,6 +5,9 @@
 
 struct disk disk;
 
+//writing to disk
+
+
 int32_t read_sectors_from_disk(uint32_t lba, uint32_t num_of_sec, void* buf){
     uint8_t is_ready_for_read;
     
