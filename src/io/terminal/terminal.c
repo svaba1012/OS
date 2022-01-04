@@ -99,3 +99,10 @@ void print_num(int32_t num, uint32_t base){
         terminal_writechar(digits[i]); //printing string digits in reverse
     }
 }
+
+void panic(char* msg){
+    print(msg);
+    while(1){
+        ;
+    }
+}
