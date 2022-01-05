@@ -21,6 +21,7 @@
 #define MY_OS_MAX_FILESYSTEMS 12
 #define MY_OS_MAX_FILE_DESCRIPTORS 512
 
+#define MY_OS_NUM_OF_SEGMENTS 6
 
 
 #endif

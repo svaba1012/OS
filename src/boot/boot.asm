@@ -46,7 +46,7 @@ step2:
 
 .load_protected:    ;switch to 32 bit mod
     cli
-    lgdt[gdt_descriptor]
+    lgdt [gdt_descriptor]
     mov eax, cr0
     or eax, 0x1
     mov cr0, eax

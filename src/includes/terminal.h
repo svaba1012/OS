@@ -13,5 +13,6 @@ void print(char* str);
 void print_num(int32_t num, uint32_t base);
 void terminal_init();
 void set_color(uint8_t color);
+void panic(char* msg);
 
 #endif
