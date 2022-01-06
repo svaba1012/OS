@@ -34,7 +34,8 @@ OBJ_KERNEL_FILES = $(KERNEL_ASM_OBJ) $(KERNEL_OBJ) $(IDT_ASM_O) $(IDT_O) \
  $(MEMORY_O) $(IO_ASM_O) $(TERMINAL_O) $(HEAP_O) $(KHEAP_O) ./build/memory/paging/paging.o \
  ./build/io/disk/disk.o ./build/memory/paging/paging.asm.o ./build/string/string.o \
   ./build/filesystem/pathparser.o  ./build/filesystem/disk_streamer.o ./build/filesystem/file.o \
-  ./build/filesystem/fat/fat16.o	./build/gdt/gdt.o  ./build/gdt/gdt.asm.o
+  ./build/filesystem/fat/fat16.o	./build/gdt/gdt.o  ./build/gdt/gdt.asm.o	\
+  ./build/task/tss.asm.o ./build/io/disk/disk.asm.o
 
 .PHONY: all clean
 

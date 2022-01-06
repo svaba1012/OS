@@ -7,6 +7,8 @@ struct disk disk;
 
 //writing to disk
 
+extern void ata_lba_write(uint32_t lba, uint32_t num_of_sec, void* buf);
+extern int32_t ata_lba_read(uint32_t lba, uint32_t num_of_sec, void* buf);
 
 int32_t read_sectors_from_disk(uint32_t lba, uint32_t num_of_sec, void* buf){
     uint8_t is_ready_for_read;
@@ -53,5 +55,45 @@ uint32_t read_disk_block(struct disk* disk_addr, uint32_t lba, uint32_t num_of_s
     if(disk_addr != &disk){
         return -EIO;
     }
-    return read_sectors_from_disk(lba, num_of_sec, buf);
+    if(ata_lba_read(lba, num_of_sec, buf) != 0){
+        read_disk_block(disk_addr,lba, num_of_sec, buf);
+    }
+    return 0; //read_sectors_from_disk(lba, num_of_sec, buf);
+}
+
+
+/* something is wrong use assembly version
+int32_t write_sectors_to_disk(uint32_t lba, uint32_t num_of_sec, void* buf){
+    uint8_t is_ready_for_write;
+    
+    out_byte(0x1F6, (lba >> 24) | 0xE0); //sending highest bits to lba, selecting master drive
+    out_byte(0x1F2, num_of_sec & 0xFF); //sending how many sectors are going to be read
+    out_byte(0x1F3, lba & 0xFF); //sending lower bits of lba
+    out_byte(0x1F4, (lba >> 8) & 0xFF); //sending bits 8-15 to lba
+    out_byte(0x1F5, (lba >> 16) & 0xFF); //sending bits 16-23 to lba
+    
+    out_byte(0x1F7, 0x30); //prepering to write
+
+    uint16_t* ptr = (uint16_t*) buf;
+
+    for(int i = 0; i < num_of_sec; i++){
+        is_ready_for_write = in_byte(0x1F7);
+        while(!(is_ready_for_write & 0x08)){
+            is_ready_for_write = in_byte(0x1F7);
+        }
+        for(int j = 0; j < 256; j++){
+            out_word(0x1F, *ptr);
+            ptr++;
+        }
+    }
+    return 0;
+}
+*/
+
+uint32_t write_disk_block(struct disk* disk_addr, uint32_t lba, uint32_t num_of_sec, void* buf){
+    if(disk_addr != &disk){
+        return -EIO;
+    }
+    ata_lba_write(lba, num_of_sec, buf);
+    return 0;// write_sectors_to_disk(lba, num_of_sec, buf);
 }

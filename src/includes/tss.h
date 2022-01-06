@@ -31,5 +31,5 @@ struct tss
     uint32_t iopb;
 } __attribute__((packed));
 
-void tss_load(int tss_segment);
+void tss_load(int tss_segment); //tss_segment is byte offset from gdt start to tss
 #endif

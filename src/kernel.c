@@ -29,6 +29,8 @@ struct gdt_structured gdt_structured[MY_OS_NUM_OF_SEGMENTS] = {
     {.base = (uint32_t)&tss, .limit=sizeof(tss), .type = 0xE9}      // TSS Segment
 };
 
+char buf[512] = "I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind, only you  ";
+
 void kernel_main(){
     //Set the terminal
     terminal_init();
@@ -47,9 +49,22 @@ void kernel_main(){
     
     //set the interrupt table 
     init_intr_table();
+
+
+    // Setup the TSS
+    memset(&tss, 0x00, sizeof(tss));
+    tss.esp0 = 0x600000;
+    tss.ss0 = DATA_SEG_SELECTOR;
+
+    // Load the TSS
+    tss_load(0x28);
     
     //find the first disk, set the filesystem and check which filesystem is on disk 0
     disk_init();
+    //char buf_help[100];
+    
+    
+    
     filesystem_init();
     fs_resolve(get_disk_by_index(0));
 

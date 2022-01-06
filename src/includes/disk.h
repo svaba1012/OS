@@ -18,6 +18,8 @@ struct disk{
     void* fs_private;
 };
 
+
+uint32_t write_disk_block(struct disk* disk_addr, uint32_t lba, uint32_t num_of_sec, void* buf);
 uint32_t read_disk_block(struct disk* disk_addr, uint32_t lba, uint32_t num_of_sec, void* buf);
 struct disk* get_disk_by_index(uint32_t i);
 void disk_init();
