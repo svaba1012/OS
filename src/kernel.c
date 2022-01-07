@@ -47,6 +47,7 @@ void kernel_main(){
     //set the heap and enable memory allocation
     kheap_int();
     
+
     //set the interrupt table 
     init_intr_table();
 

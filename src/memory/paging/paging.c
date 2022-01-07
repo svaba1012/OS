@@ -59,3 +59,12 @@ void physical_addr_map_to_vitual(uint32_t* directory, uint32_t virt, uint32_t ph
     table = (uint32_t*)(directory[dir_index] & 0xfffff000);
     table[table_index] = phys;
 }
+
+void pagging_free_4gb_chunk(struct paging_4gb_chunk* chunk){
+    uint32_t* page_dir = chunk->directory_entry;
+    for(int32_t i = 0; i < PAGING_PAGE_NUM; i++){
+        kfree((uint32_t*)(page_dir[i] & 0xfffff000));
+    }
+    kfree(page_dir);
+    kfree(chunk);
+}
