@@ -1,6 +1,7 @@
 #include "paging.h"
 #include "kheap.h"
 #include "config.h"
+#include "status.h"
 
 extern void load_paging_directory(uint32_t* directory);
 
@@ -44,20 +45,26 @@ void paging_switch(uint32_t* directory){
     current_directory = directory;
 }
 
-void physical_addr_map_to_vitual(uint32_t* directory, uint32_t virt, uint32_t phys){
+int32_t physical_addr_map_to_vitual(uint32_t* directory, uint32_t virt, uint32_t phys, int32_t flags){
+    int32_t res = 0;
     uint32_t dir_index;
     uint32_t table_index;
     if(virt % PAGING_PAGE_SIZE != 0){
-        ;//code for unalligned adress    
+        res = -EINVARG;//code for unalligned adress    
+        goto out;
     }
     if(phys % PAGING_PAGE_SIZE != 0){
-        ;//code for unalligned adress    
+        res = -EINVARG;//code for unalligned adress    
+        goto out;    
     }
     dir_index = virt / PAGING_ONE_TABLE_MEM_COVERAGE;
     table_index = (virt % PAGING_ONE_TABLE_MEM_COVERAGE) / PAGING_PAGE_SIZE;
     uint32_t* table;
     table = (uint32_t*)(directory[dir_index] & 0xfffff000);
+    directory[dir_index] = (int32_t)table | flags;
     table[table_index] = phys;
+    out:
+    return res;
 }
 
 void pagging_free_4gb_chunk(struct paging_4gb_chunk* chunk){
@@ -67,4 +74,49 @@ void pagging_free_4gb_chunk(struct paging_4gb_chunk* chunk){
     }
     kfree(page_dir);
     kfree(chunk);
+}
+
+
+int32_t pagging_map_to(uint32_t* directory, uint32_t virt, uint32_t phys, uint32_t phys_end, int32_t flags){
+    int32_t res = 0;
+    if(virt % PAGING_PAGE_SIZE){
+        res = -EINVARG;
+        goto out;
+    }
+    if(phys % PAGING_PAGE_SIZE){
+        res = -EINVARG;
+        goto out;
+    }
+    if(phys_end % PAGING_PAGE_SIZE){
+        res = -EINVARG;
+        goto out;
+    }
+    if(phys_end < phys){
+        res = -EINVARG;
+        goto out;
+    }
+    uint32_t total_bytes = phys_end - phys;
+    uint32_t total_pages = total_bytes / PAGING_PAGE_SIZE;
+    for(int32_t i = 0; i < total_pages; i++){
+        res = physical_addr_map_to_vitual(directory, virt, phys, flags);
+        if(res < 0){
+            goto out;
+        }
+        virt += PAGING_PAGE_SIZE;
+        phys += PAGING_PAGE_SIZE;
+    }
+    out:
+
+    return res;
+}
+
+uint32_t address_page_allign_end(uint32_t addr){
+    if(addr % PAGING_PAGE_SIZE){
+        return addr;
+    }
+    return (addr / PAGING_PAGE_SIZE + 1) * PAGING_PAGE_SIZE;
+}
+
+uint32_t address_page_allign_start(uint32_t addr){
+    return (addr / PAGING_PAGE_SIZE) * PAGING_PAGE_SIZE;
 }

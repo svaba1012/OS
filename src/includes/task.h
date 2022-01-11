@@ -4,6 +4,7 @@
 #include "config.h"
 #include "paging.h"
 #include <stdint.h>
+#include "process.h"
 
 struct registers
 {
@@ -32,6 +33,9 @@ struct task
     // The registers of the task when the task is not running
     struct registers registers;
 
+    //Process of the task
+    struct process* process;
+
     // The next task in the linked list
     struct task* next;
 
@@ -39,10 +43,19 @@ struct task
     struct task* prev;
 };
 
-struct task* task_new();
+struct task* task_new(struct process* process);
 struct task* task_current();
 struct task* task_get_next();
 int task_free(struct task* task);
+
+void restore_general_purpose_registers(struct registers* regs);
+void task_return(struct registers* regs);
+void user_registers();
+
+int32_t task_page();
+int32_t task_switch(struct task* task);
+void task_run_first_task_ever();
+
 
 
 #endif

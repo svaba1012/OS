@@ -97,3 +97,15 @@ char* strnchr(char* str, char c, int32_t n){
     }
     return NULL;
 }
+
+char* strncpy(char* dest, char* src, size_t len){
+    int32_t i = 0;
+    for(i = 0; i < len; i++){
+        dest[i] = src[i];
+        if(dest[i] == '\0'){
+            break;
+        }
+    }
+    dest[i] = '\0';
+    return dest;
+}
