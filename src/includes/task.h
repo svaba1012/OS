@@ -21,7 +21,7 @@ struct registers
     uint32_t flags;
     uint32_t esp;
     uint32_t ss;
-};
+}__attribute__((packed));
 
 struct task
 {

@@ -27,5 +27,6 @@ struct process{
 
 }; 
 
+int32_t process_load(char* filename, struct process** processes);
 
 #endif

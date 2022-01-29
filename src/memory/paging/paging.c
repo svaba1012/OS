@@ -61,8 +61,8 @@ int32_t physical_addr_map_to_vitual(uint32_t* directory, uint32_t virt, uint32_t
     table_index = (virt % PAGING_ONE_TABLE_MEM_COVERAGE) / PAGING_PAGE_SIZE;
     uint32_t* table;
     table = (uint32_t*)(directory[dir_index] & 0xfffff000);
-    directory[dir_index] = (int32_t)table | flags;
-    table[table_index] = phys;
+    //directory[dir_index] = (uint32_t)table | flags;
+    table[table_index] =  phys | flags;
     out:
     return res;
 }
@@ -87,7 +87,7 @@ int32_t pagging_map_to(uint32_t* directory, uint32_t virt, uint32_t phys, uint32
         res = -EINVARG;
         goto out;
     }
-    if(phys_end % PAGING_PAGE_SIZE){
+    if(phys_end % PAGING_PAGE_SIZE){ 
         res = -EINVARG;
         goto out;
     }
@@ -111,7 +111,7 @@ int32_t pagging_map_to(uint32_t* directory, uint32_t virt, uint32_t phys, uint32
 }
 
 uint32_t address_page_allign_end(uint32_t addr){
-    if(addr % PAGING_PAGE_SIZE){
+    if(addr % PAGING_PAGE_SIZE == 0){
         return addr;
     }
     return (addr / PAGING_PAGE_SIZE + 1) * PAGING_PAGE_SIZE;
@@ -119,4 +119,21 @@ uint32_t address_page_allign_end(uint32_t addr){
 
 uint32_t address_page_allign_start(uint32_t addr){
     return (addr / PAGING_PAGE_SIZE) * PAGING_PAGE_SIZE;
+}
+
+uint32_t pagging_get_flags(uint32_t* directory, uint32_t virt){
+    uint32_t flags = 0;
+    uint32_t directory_index = virt / PAGING_ONE_TABLE_MEM_COVERAGE;
+    //uint32_t page_index = (virt % PAGING_ONE_TABLE_MEM_COVERAGE) / PAGING_PAGE_SIZE;
+    flags = directory[directory_index] & 0xfff;
+    return flags;
+}
+
+uint32_t pagging_get_phys_addr(uint32_t* directory, uint32_t virt){
+    uint32_t phys = 0;
+    uint32_t directory_index = virt / PAGING_ONE_TABLE_MEM_COVERAGE;
+    uint32_t page_index = (virt % PAGING_ONE_TABLE_MEM_COVERAGE) / PAGING_PAGE_SIZE;
+    uint32_t* table = (uint32_t*)(directory[directory_index] & 0xfffff000);
+    phys = table[page_index] & 0xfffff000;
+    return phys;
 }

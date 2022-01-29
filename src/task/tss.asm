@@ -6,6 +6,6 @@ tss_load:
     push ebp
     mov ebp, esp
     mov ax, [ebp+8] ; TSS Segment
-    ltr ax  ;load task switch seg
+    ltr ax
     pop ebp
     ret

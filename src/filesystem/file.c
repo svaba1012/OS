@@ -166,3 +166,19 @@ int32_t fclose(uint32_t fd){
     return res;
 
 }
+
+int32_t fwrite(void* buf, size_t block_size, int32_t num_of_blocks, uint32_t fd){
+    int32_t num_of_bytes;
+    int32_t res = 0;
+    if(fd < 1){
+        res = -EINVARG;
+        goto out;
+    }
+    struct file_descriptor* file_desc = file_descriptors[fd-1];
+    num_of_bytes = file_desc->disk->filesystem->write(buf, block_size, num_of_blocks, file_desc);
+    out:
+    if(res < 0){
+        return 0;
+    }
+    return num_of_bytes;
+}

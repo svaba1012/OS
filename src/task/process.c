@@ -25,6 +25,10 @@ struct process* process_get(int32_t id){
 
 static int32_t process_map_memory_binary(struct process* process){
     int32_t res = 0;
+    //debug
+    //process->code_ptr = (void*)0x400000;
+    //process->data_ptr = (void*)0x400000;
+    //debug
     res = pagging_map_to(process->main_task->page_directory->directory_entry, MY_OS_PROGRAM_VIRTUAL_ADDRESS, 
     (uint32_t)process->code_ptr, address_page_allign_end((uint32_t)process->code_ptr + process->size),
     PAGING_PAGE_WRITEABLE | PAGING_PAGE_PRESENT | PAGING_PAGE_ACCESS_FOR_ALL);
@@ -63,6 +67,10 @@ static int32_t load_process_data_binary(uint32_t fd, struct process* process){
     if(fread(program_ptr, 1, process->size, fd) != process->size){
         res = -EIO; 
         goto out;
+    }
+    uint8_t* ptr = (uint8_t*) program_ptr;
+    if(ptr){
+        ;
     }
     
     process->code_ptr = program_ptr;
@@ -116,9 +124,9 @@ static int32_t load_process_data(char* filename, struct process* process){
     process->main_task = task;
     strncpy(process->filename, filename, strlen(filename));
     res = process_map_memory(process); //map the code and data parts of the program to constant virtual addresses
-    res = pagging_map_to(process->main_task->page_directory->directory_entry, MY_OS_USER_STACK_VIRTUAL_ADDRESS,
+    res = pagging_map_to(process->main_task->page_directory->directory_entry, MY_OS_USER_STACK_VIRTUAL_ADDRESS - MY_OS_USER_STACK_SIZE,
     (uint32_t)process->stack_ptr, address_page_allign_end((uint32_t)(process->stack_ptr + MY_OS_USER_STACK_SIZE)),
-    PAGING_PAGE_PRESENT | PAGING_PAGE_WRITEABLE | PAGING_PAGE_PRESENT); 
+     PAGING_PAGE_ACCESS_FOR_ALL | PAGING_PAGE_WRITEABLE | PAGING_PAGE_PRESENT); //stack grows downwards 
     // maping stack segment of the program to const virt 
     
     out:
@@ -152,7 +160,7 @@ int32_t process_load_for_index(char* filename, struct process** process, int32_t
     }
     _process->id = index;
     *process = _process;
-    processes[index] = process_get(index);
+    processes[index] = *process;
     
     out:
     if(res < 0){
@@ -165,10 +173,10 @@ int32_t process_load_for_index(char* filename, struct process** process, int32_t
     return res;
 }
 
-int32_t process_load(char* filename, struct process** processes){
+int32_t process_load(char* filename, struct process** process){
     for(int32_t i = 0; i < MY_OS_MAX_PROCESSES; i++){
         if(processes[i] == NULL){
-            return process_load_for_index(filename, processes, i);
+            return process_load_for_index(filename, process, i);
         }
     }
     return -ENOMEM;

@@ -21,6 +21,11 @@ typedef int32_t (*FS_STAT_FUNCTION)(struct file_descriptor* f_desc, struct file_
 typedef int32_t (*FS_SEEK_FUNCTION)(struct file_descriptor* f_desc, int32_t offset, int32_t pos);//+
 typedef int32_t (*FS_CLOSE_FUNCTION)(struct file_descriptor* f_desc);//?
 
+typedef int32_t (*FS_WRITE_FUNCTION)(void* buf, size_t block_size, size_t n_memb, struct file_descriptor* f_desc);
+
+
+
+
 struct filesystem{
     FS_RESOLVE_FUNCTION resolve; //return 0 if disk is usable
     FS_OPEN_FUNCTION open;
@@ -28,6 +33,7 @@ struct filesystem{
     FS_SEEK_FUNCTION seek;
     FS_STAT_FUNCTION stat;
     FS_CLOSE_FUNCTION close;
+    FS_WRITE_FUNCTION write;
     char name[20];
 };
 
@@ -66,6 +72,8 @@ int32_t fread(void* buf, size_t block_size, int32_t num_of_blocks, uint32_t fd);
 int32_t fseek(uint32_t fd, int32_t offset, int32_t pos);
 int32_t fstat(uint32_t fd, struct file_stats* f_stats);
 int32_t fclose(uint32_t fd);
+int32_t fwrite(void* buf, size_t block_size, int32_t num_of_blocks, uint32_t fd);
+
 //implement more file functionality
 
 

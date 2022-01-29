@@ -28,7 +28,8 @@ void pagging_free_4gb_chunk(struct paging_4gb_chunk* chunk);
 int32_t pagging_map_to(uint32_t* directory, uint32_t virt, uint32_t phys, uint32_t phys_end, int32_t flags); 
 uint32_t address_page_allign_start(uint32_t addr);
 uint32_t address_page_allign_end(uint32_t addr);
-
+uint32_t pagging_get_flags(uint32_t* directory, uint32_t virt);
+uint32_t pagging_get_phys_addr(uint32_t* directory, uint32_t virt);
 
 
 #endif

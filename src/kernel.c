@@ -13,6 +13,8 @@
 #include "config.h"
 #include "memory.h"
 #include "tss.h"
+#include "process.h"
+#include "task.h"
 
 
 struct paging_4gb_chunk* kernel_chunk;
@@ -75,9 +77,20 @@ void kernel_main(){
     enable_paging();
     
     //enable interrupts
-    enable_interrupts();
+    //enable_interrupts();
     char str[40] = "Hello master at your service\n";
     print(str);
+    struct process* process;
+    int32_t res = process_load("0:/LOOP.BIN", &process);
+    if(res < 0){
+        panic("Can't load process\n");
+    }
+    uint8_t* ptr = process->data_ptr;
+    if(ptr){
+        ;
+    }
+    task_run_first_task_ever();
+
     
     return;
 }

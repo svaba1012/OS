@@ -116,10 +116,12 @@ struct filesystem fat16_filesystem;
 int32_t fat16_resolve(struct disk* disk);
 void* fat16_open(struct disk* disk, struct path_dir* path, FILE_MODE mode);
 int32_t fat16_read(void* buf, size_t block_size, size_t n_memb, struct file_descriptor* f_desc);
+int32_t fat16_write(void* buf, size_t block_size, size_t n_memb, struct file_descriptor* f_desc);
 int32_t fat16_seek(struct file_descriptor* f_desc, int32_t offset, int32_t pos);
 int32_t fat16_stat(struct file_descriptor* f_desc, struct file_stats* f_stats);
 int32_t fat16_close(struct file_descriptor* f_desc);
 //implement more fat16_functionality
+
 
 struct filesystem* fat16_init(){
     fat16_filesystem.open = fat16_open;
@@ -128,9 +130,76 @@ struct filesystem* fat16_init(){
     fat16_filesystem.seek = fat16_seek;
     fat16_filesystem.stat = fat16_stat;
     fat16_filesystem.close = fat16_close;
-
+    fat16_filesystem.write = fat16_write;
     strcpy(fat16_filesystem.name, "FAT16");
     return &fat16_filesystem; 
+}
+
+int32_t find_free_cluster(struct fat_private* fat_private, int32_t* cluster_ind){
+    int32_t res = 0;
+    FAT_ENTRY entry_fat = 1;
+    uint32_t fat_entry_disk_pos = fat_private->header.primary_header.reserved_sectors; //start of first fat
+    uint32_t size_of_fat = fat_private->header.primary_header.sectrors_per_fat;
+    uint32_t num_of_fat_copies = fat_private->header.primary_header.fat_copies;
+    int32_t cluster_index = 2;
+    for(cluster_index = 2; cluster_index < size_of_fat * MY_OS_DISK_SECTOR_SIZE / sizeof(FAT_ENTRY); cluster_index++){
+        fat_entry_disk_pos += cluster_index * 2; 
+        set_disk_pos(fat_private->fat_read_stream, fat_entry_disk_pos);
+        if(read_bytes_from_disk(fat_private->fat_read_stream, &entry_fat, sizeof(FAT_ENTRY)) != ALL_OK){
+            res = -EIO;
+            goto out;
+        }
+        if(entry_fat == 0){ //cluster is free
+            entry_fat = 0xFFFF;//look for the value in fat that represent occupied FAT
+            for(int32_t i = 0; i < num_of_fat_copies; i++){ //set fat entries in all fat copies
+                set_disk_pos(fat_private->fat_read_stream, fat_entry_disk_pos);
+                if(write_bytes_to_disk(fat_private->fat_read_stream, &entry_fat, sizeof(FAT_ENTRY)) != ALL_OK){
+                    res = -EIO;
+                    goto out;
+                }
+                fat_entry_disk_pos += size_of_fat * MY_OS_DISK_SECTOR_SIZE;
+            }
+            
+            *cluster_ind = cluster_index;
+            goto out;
+        }
+    }
+
+    out: 
+    return res;
+}
+
+int32_t fat16_create_file(char* filename, struct fat_directory_item* new_entry, uint32_t item_disk_pos, int32_t num_ent, struct fat_private* fat_private){
+    int32_t res = 0;
+    //set new item entry
+    //implement time and date mesuring first to set dates and times of creation, access and last modification
+    new_entry->filesize = 0;
+    new_entry->attribute = 0;
+    char* ext = strnchr(filename, '.', FAT16_FULL_FILE_NAME_MAX_LEN);
+    if(ext != NULL){
+        *ext = '\0';
+        ext++;
+        strncpy((char*)new_entry->ext, ext, FAT16_EXTENSION_MAX_LEN);
+    }
+    strncpy((char*)new_entry->filename, filename, FAT16_SHORT_FILE_NAME_MAX_LEN);
+    //find first free cluster in FAT
+    int32_t cluster_index;
+    res = find_free_cluster(fat_private, &cluster_index);
+    if(res < 0){
+        goto out;
+    }
+    new_entry->low_16_bits_first_cluster = cluster_index & 0xffff;
+    new_entry->high_16_bits_first_cluster = (cluster_index >> 16) & 0xffff;
+    //long filename entry, need to implement
+    //...
+    //...
+    set_disk_pos(fat_private->cluster_read_stream, item_disk_pos + num_ent * sizeof(struct fat_directory_item));
+    if(write_bytes_to_disk(fat_private->cluster_read_stream, new_entry, sizeof(struct fat_directory_item)) != ALL_OK){
+        res = -EIO;
+        goto out;
+    }
+    out:
+    return res;
 }
 
 uint32_t get_cluster_position(uint16_t high_bits, uint16_t low_bits){
@@ -210,7 +279,7 @@ int32_t fat16_get_total_items_for_directory(struct disk* disk, int32_t dir_start
     return total_item;
 }
 
-void* read_directory_item_entries(struct disk* disk, struct fat_directory_item* dir_item){
+void* read_directory_item_entries(struct disk* disk, struct fat_directory_item* dir_item, uint32_t* item_disk_pos){
     int32_t res = 0; 
     void* buf_start = NULL;
     if((dir_item->attribute & FAT16_FILE_SUBDIRECTORY) == 0){// checking if item is subdirectory
@@ -231,7 +300,8 @@ void* read_directory_item_entries(struct disk* disk, struct fat_directory_item* 
         goto out;
     }
     cluster_pos = data_clusters_start_pos + (cluster_pos-2) * cluster_sector_size;
-    set_disk_pos(fat_private->cluster_read_stream, cluster_pos * disk->sectors_size);
+    *item_disk_pos = cluster_pos * disk->sectors_size;
+    set_disk_pos(fat_private->cluster_read_stream, *item_disk_pos);
 
     if(read_bytes_from_disk(fat_private->cluster_read_stream, buf_start, f_size) != ALL_OK){
         res = -EIO;
@@ -269,7 +339,7 @@ int32_t read_internal(struct disk* disk, struct fat_directory_item* dir_item, vo
     FAT_ENTRY* cluster_pointer;
     cluster_pointer = kzalloc(sizeof(FAT_ENTRY) * num_of_clusters);
     cluster_pointer[0] = cluster_pos;//change
-    for(int32_t i = 1; i < num_of_clusters; i++){//finding all cluster indexes where are item data is stored 
+    for(int32_t i = 1; i < num_of_clusters; i++){//finding all cluster indexes where item data is stored 
         set_disk_pos(fat_private->fat_read_stream, fat1_start_pos * disk->sectors_size + cluster_pointer[i-1]*sizeof(FAT_ENTRY));
         if(read_bytes_from_disk(fat_private->fat_read_stream, &cluster_pointer[i], sizeof(FAT_ENTRY)) != ALL_OK){
             res = -EIO;
@@ -431,13 +501,15 @@ void* fat16_open(struct disk* disk, struct path_dir* path, FILE_MODE mode){
         return NULL;
     } 
     //all items in root dir will be loaded to items_in_dir
-    set_disk_pos(fat_private->directory_stream, root_dir->sector_pos * disk->sectors_size);
+    uint32_t item_disk_pos = root_dir->sector_pos * disk->sectors_size;
+    set_disk_pos(fat_private->directory_stream, item_disk_pos);
     if(read_bytes_from_disk(fat_private->directory_stream, items_in_dir,all_entries_size) != ALL_OK){
         res = -EIO;
         return NULL;    
     }//read root dir 
     struct path_dir* cur_dir = path;
     int32_t i = 0;
+    struct fat_directory_item* cur_item = NULL;
     while(cur_dir != NULL){
         i = 0;
         for(;i < entries_num; i++){//find searched subdir name in cur_dir
@@ -448,16 +520,32 @@ void* fat16_open(struct disk* disk, struct path_dir* path, FILE_MODE mode){
         }
         if(i >= entries_num){
             //searched subdir doesnt exist
-            res = -EBADPATH; 
-            goto out;
+            if(mode == FILE_MODE_READ || cur_dir->next != NULL){
+                //exit if mode is reading or if the searched item is subdir
+                res = -EBADPATH; 
+                goto out;
+            }else{
+                //else create new file for writing
+                cur_item = kzalloc(sizeof(struct fat_directory_item));
+                if(cur_item == NULL){
+                    res = -ENOMEM;
+                    goto out;
+                }
+                if(fat16_create_file(cur_dir->dir_name, cur_item, item_disk_pos, entries_num, fat_private) < 0){
+                    res = -EIO;
+                    goto out;
+                }
+            }
+        }else{
+            cur_item = &items_in_dir[i];
+            if(!is_valid_path_part(cur_dir, &items_in_dir[i])){//check path
+                res = -EBADPATH;
+                goto out;
+            }
         }
-        if(!is_valid_path_part(cur_dir, &items_in_dir[i])){//check path
-            res = -EBADPATH;
-            goto out;
-        }
-        if(items_in_dir[i].attribute & FAT16_FILE_SUBDIRECTORY){ //if part is subdirectory
+        if(cur_item->attribute & FAT16_FILE_SUBDIRECTORY){ //if part is subdirectory
             kfree(file_data);
-            file_data = read_directory_item_entries(disk, &items_in_dir[i]); //read data from found entry
+            file_data = read_directory_item_entries(disk, &items_in_dir[i], &item_disk_pos); //read data from found entry
             if(file_data == NULL){
                 res = -EIO;
                 goto out;
@@ -476,14 +564,18 @@ void* fat16_open(struct disk* disk, struct path_dir* path, FILE_MODE mode){
                 goto out;
             }
             f_desc->item = kzalloc(sizeof(struct fat_directory_item));
-            memcpy(f_desc->item, &items_in_dir[i], sizeof(struct fat_directory_item));
+            memcpy(f_desc->item, cur_item, sizeof(struct fat_directory_item));
             f_desc->pos = 0;
+            if(mode == FILE_MODE_APPEND){
+                f_desc->pos = cur_item->filesize;
+            }
         }
         cur_dir = cur_dir->next; //move to next part in list
     }
     out:
     kfree(items_in_dir);
     kfree(file_data);
+    kfree(cur_item); //check this for error
     if(res < 0){
         return NULL;
     }
@@ -645,3 +737,45 @@ int32_t fat16_close(struct file_descriptor* f_desc){
     kfree(f_desc);
     return 0;
 }
+
+
+int32_t write_internal(struct disk* disk, struct fat_directory_item* file_item, void* buf, uint32_t file_pos, size_t n_memb, size_t block_size){
+    int32_t bytes_written = 0;
+    int32_t res = 0;
+
+    if(res){
+        
+    }
+
+    out:
+    return bytes_written;
+}
+
+int32_t fat16_write(void* buf, size_t block_size, size_t n_memb, struct file_descriptor* f_desc){
+    int32_t bytes_written = 0;
+    int32_t res = 0;
+    if(block_size < 0 || n_memb < 0){
+        res = -EINVARG;
+        goto out;
+    }
+    if(f_desc == NULL || buf == NULL){
+        res = -EINVARG;
+        goto out;
+    }
+    struct fat_item_descriptor* fat_desc = (struct fat_item_descriptor*)(f_desc->private);
+    bytes_written = write_internal(f_desc->disk, fat_desc->item, buf, fat_desc->pos, block_size, n_memb);
+    fat_desc->pos += bytes_written;
+    out: 
+    if(res < 0){
+        return 0;
+    }
+    return bytes_written;
+}
+
+
+
+
+
+
+
+

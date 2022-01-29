@@ -40,12 +40,13 @@ OBJ_KERNEL_FILES = $(KERNEL_ASM_OBJ) $(KERNEL_OBJ) $(IDT_ASM_O) $(IDT_O) \
 
 .PHONY: all clean
 
-all:$(BOOT_BIN) $(KERNEL_BIN)
+all:$(BOOT_BIN) $(KERNEL_BIN) user_programs
 	rm -rf $(OS_BIN)
 	dd if=$(BOOT_BIN) >> $(OS_BIN)
 	dd if=$(KERNEL_BIN) >> $(OS_BIN)
 	dd if=/dev/zero bs=1048510 count=16 >> $(OS_BIN)
 	sudo mount -t vfat ./bin/os.bin /mnt/d
+	sudo cp ./programs/loop.bin /mnt/d
 	sudo cp ./src/file.txt /mnt/d
 	sudo cp  -r ./src/dir /mnt/d
 	sudo umount /mnt/d
@@ -63,7 +64,14 @@ $(BUILD_DIR)%.o: $(SRC_DIR)%.c
 
 $(BUILD_DIR)%.asm.o: $(SRC_DIR)%.asm
 	nasm -f elf -g $< -o $@
-clean:
+
+user_programs:
+	cd ./programs && $(MAKE) all
+
+user_programs_delete:
+	cd ./programs && $(MAKE) clean
+
+clean: user_programs_delete
 	rm -rf ./bin/*.bin
 	rm -rf ./build/*.o
 	rm -rf ./build/*/*.o

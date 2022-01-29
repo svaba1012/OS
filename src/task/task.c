@@ -23,6 +23,7 @@ struct task* task_new(struct process* process){
     }
     if(task_head == NULL){
         task_head = new_task;
+        current_task = new_task;
         new_task ->prev = NULL;
     }else{
         task_tail ->next = new_task;
@@ -82,7 +83,26 @@ int task_free(struct task* task){
 
 int32_t task_switch(struct task* task){
     current_task = task;
+    uint32_t task_phys_memory = (uint32_t)task ->process ->data_ptr;
+    uint32_t phys = pagging_get_phys_addr(task->page_directory->directory_entry, 0x400000);
     paging_switch(task->page_directory->directory_entry);
+    //for debuging 
+    uint32_t flags = pagging_get_flags(task->page_directory->directory_entry, 0x400000);
+    if(flags != (PAGING_PAGE_WRITEABLE | PAGING_PAGE_ACCESS_FOR_ALL | PAGING_PAGE_PRESENT)){
+        while(1){
+            ;
+        }
+    }
+    
+    if(phys == 0){
+        while(1){
+            ;
+        }
+    }
+    
+    if(task_phys_memory != phys){
+        //panic("Something went wrong\n");
+    }
     return 0;
 }
 
@@ -97,5 +117,10 @@ void task_run_first_task_ever(){
         panic("task_run_first_task_ever():No current task");
     }
     task_switch(task_head);
+    uint8_t* ptr =(uint8_t*)task_head->registers.esp;
+    uint8_t* ptr1 =(uint8_t*)task_head->registers.ip;
+    if(ptr && ptr1){
+        ;
+    }
     task_return(&task_head->registers);
 }
