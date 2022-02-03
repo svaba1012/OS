@@ -6,7 +6,7 @@ DATA_SEG equ gdt_data - gdt_start
 
 jmp short start
 nop
-;FAT16 header
+;FAT16 header, holds some constants needed by filesystem
 OEMIdentifier       db 'MYOS    '
 BytesPerSector      dw 0x0200
 SectorsPerCluster   db 0x80
@@ -37,7 +37,7 @@ start:
 
 step2:
     cli ; Clear Interrupts
-    mov ax, 0x00
+    mov ax, 0x00  ;set segment registers to 0
     mov ds, ax
     mov es, ax
     mov ss, ax
@@ -46,11 +46,11 @@ step2:
 
 .load_protected:    ;switch to 32 bit mod
     cli
-    lgdt [gdt_descriptor]
-    mov eax, cr0
-    or eax, 0x1
+    lgdt [gdt_descriptor]   ;instruction for loading gdt
+    mov eax, cr0            ;setting least significant bit to 1 
+    or eax, 0x1             ;in cr0 register switch bootloader to 32-bit mode
     mov cr0, eax
-    jmp CODE_SEG:load32
+    jmp CODE_SEG:load32     ;performing long jump to 32-bit 
 
 ; GDT
 gdt_start: ;global descriptor table
@@ -84,10 +84,11 @@ gdt_descriptor:
  
 [BITS 32]
  load32:
-    mov eax, 1
-    mov ecx, 100
-    mov edi, 0x0100000
-    call ata_lba_read   ;Reading ecx number of sectors starting from eax from hard to memory at address edi 
+    mov eax, 1          ;index of starting disk sector for reading in memory 
+    mov ecx, 100        ;number of sectors for reading 
+    mov edi, 0x0100000  ;addres where to write data read from disk
+    ;Reading kernel from disk and jumping to kernel
+    call ata_lba_read   ;Reading ecx number of sectors starting from eax from hard to memory at address edi
     jmp CODE_SEG:0x0100000  ;jumping to kernel
 
 ata_lba_read:

@@ -9,6 +9,10 @@
 #include "terminal.h"
 #include <stdbool.h>
 
+/*File allocation table is one of the most simpliest filesystem, yet it's the best for learning
+You can look how it works here link ...
+*/
+
 #define MY_OS_FAT16_SIGNATURE 0x29
 #define MY_OS_FAT16_FAT_ENTRY_SIZE 2
 #define MY_OS_FAT16_BAD_SECTOR 0xFF7
@@ -100,6 +104,8 @@ struct fat_item{
 
 struct fat_item_descriptor{
     struct fat_directory_item* item;
+    struct fat_directory_item* upper_subdir;
+    int32_t index_in_subdir;
     uint32_t pos;
 };
 
@@ -137,13 +143,14 @@ struct filesystem* fat16_init(){
 
 int32_t find_free_cluster(struct fat_private* fat_private, int32_t* cluster_ind){
     int32_t res = 0;
-    FAT_ENTRY entry_fat = 1;
-    uint32_t fat_entry_disk_pos = fat_private->header.primary_header.reserved_sectors; //start of first fat
+    FAT_ENTRY entry_fat;
+    uint32_t fat_start = fat_private->header.primary_header.reserved_sectors * MY_OS_DISK_SECTOR_SIZE; //start of first fat
     uint32_t size_of_fat = fat_private->header.primary_header.sectrors_per_fat;
     uint32_t num_of_fat_copies = fat_private->header.primary_header.fat_copies;
-    int32_t cluster_index = 2;
-    for(cluster_index = 2; cluster_index < size_of_fat * MY_OS_DISK_SECTOR_SIZE / sizeof(FAT_ENTRY); cluster_index++){
-        fat_entry_disk_pos += cluster_index * 2; 
+    int32_t cluster_index = 3;
+    uint32_t fat_entry_disk_pos;
+    for(cluster_index = 3; cluster_index < size_of_fat * MY_OS_DISK_SECTOR_SIZE / sizeof(FAT_ENTRY); cluster_index++){
+        fat_entry_disk_pos = fat_start + cluster_index * sizeof(FAT_ENTRY); 
         set_disk_pos(fat_private->fat_read_stream, fat_entry_disk_pos);
         if(read_bytes_from_disk(fat_private->fat_read_stream, &entry_fat, sizeof(FAT_ENTRY)) != ALL_OK){
             res = -EIO;
@@ -317,6 +324,55 @@ void* read_directory_item_entries(struct disk* disk, struct fat_directory_item* 
     return buf_start;
 }
 
+FAT_ENTRY* get_cluster_indexes(struct fat_private* fat_private, struct fat_directory_item* dir_item){
+    int32_t res = 0;
+    struct fat16_header* prim_header = &fat_private->header.primary_header;
+    uint32_t f_size = dir_item->filesize;
+    int32_t cluster_sector_size = prim_header->sectrors_per_cluster;
+    int32_t cluster_size =  cluster_sector_size * MY_OS_DISK_SECTOR_SIZE;
+    uint32_t cluster_pos = get_cluster_position(dir_item->high_16_bits_first_cluster, dir_item->low_16_bits_first_cluster);
+    //uint32_t data_clusters_start_pos = fat_private->root_directory.ending_sector_pos;
+
+    int32_t num_of_clusters = f_size / cluster_size;
+    if(f_size % cluster_size != 0 || f_size == 0){ //check this
+        num_of_clusters++;
+    }
+    uint32_t fat1_start_pos = prim_header->reserved_sectors;
+    FAT_ENTRY* cluster_pointer;
+    cluster_pointer = kzalloc(sizeof(FAT_ENTRY) * num_of_clusters);
+    if(cluster_pointer == NULL){
+        res = -ENOMEM;
+        goto out;
+    }
+    cluster_pointer[0] = cluster_pos;//change
+    for(int32_t i = 1; i < num_of_clusters; i++){//finding all cluster indexes where item data is stored 
+        set_disk_pos(fat_private->fat_read_stream, fat1_start_pos * MY_OS_DISK_SECTOR_SIZE + cluster_pointer[i-1]*sizeof(FAT_ENTRY));
+        if(read_bytes_from_disk(fat_private->fat_read_stream, &cluster_pointer[i], sizeof(FAT_ENTRY)) != ALL_OK){
+            res = -EIO;
+            goto out;
+        }
+        if(cluster_pointer[i] == 0xFF0 || cluster_pointer[i] == 0xFF6){//sector is reserved
+            res = -EIO;
+            goto out;
+        }
+        if(cluster_pointer[i] == 0){
+            res = -EIO;
+            goto out;
+        }
+        if(cluster_pointer[i] == MY_OS_FAT16_BAD_SECTOR){
+            res = -EIO;
+            goto out;
+        }
+    }
+    out:
+    if(res < 0){
+        kfree(cluster_pointer);
+        return NULL;
+    }
+    return cluster_pointer;
+}
+
+
 int32_t read_internal(struct disk* disk, struct fat_directory_item* dir_item, void* buf, int32_t offset, uint32_t block_size, uint32_t block_num){
     int32_t res = 0;
     if(dir_item->attribute & FAT16_FILE_SUBDIRECTORY){//is subdir if yes error
@@ -330,7 +386,8 @@ int32_t read_internal(struct disk* disk, struct fat_directory_item* dir_item, vo
     int32_t cluster_size =  cluster_sector_size * disk->sectors_size;
     uint32_t cluster_pos = get_cluster_position(dir_item->high_16_bits_first_cluster, dir_item->low_16_bits_first_cluster);
     uint32_t data_clusters_start_pos = fat_private->root_directory.ending_sector_pos;
-
+    
+    /*
     int32_t num_of_clusters = f_size / cluster_size;
     if(f_size % cluster_size != 0){
         num_of_clusters++;
@@ -357,23 +414,37 @@ int32_t read_internal(struct disk* disk, struct fat_directory_item* dir_item, vo
             res = -EIO;
             goto out;
         }
-    }
+    }*/
+    int32_t reading = cluster_size;
     int32_t cluster_index = offset / cluster_size;
     int32_t cluster_offset = offset % cluster_size;
     int32_t left_to_read = block_size * block_num;
-    int32_t reading = cluster_size;
     void* buf_c = buf;
+    FAT_ENTRY* cluster_pointer = get_cluster_indexes(fat_private, dir_item);
+    if(cluster_pointer == NULL){
+        res = -EIO;
+        goto out;
+    }
+    if(f_size < left_to_read + offset){
+        res = -EINVARG; 
+        goto out;
+    }
+    
+    
     while(left_to_read > 0){
         cluster_pos = data_clusters_start_pos + (cluster_pointer[cluster_index]-2) * cluster_sector_size;
         set_disk_pos(fat_private->cluster_read_stream, cluster_pos * disk->sectors_size + cluster_offset);
-        cluster_offset = 0;
         if(left_to_read < cluster_size){
             reading = left_to_read; 
+        }
+        if((cluster_offset != 0) && (reading + cluster_offset > cluster_size)){
+            reading = cluster_size - cluster_offset;
         }
         if(read_bytes_from_disk(fat_private->cluster_read_stream, buf_c,reading) != ALL_OK){
             res = -EIO;
             goto out;
         }
+        cluster_offset = 0;
         buf_c += reading;
         left_to_read -= reading; 
         cluster_index++;
@@ -486,7 +557,7 @@ void* fat16_open(struct disk* disk, struct path_dir* path, FILE_MODE mode){
     struct fat_item_descriptor* f_desc = NULL;
     struct fat_directory_item* items_in_dir = NULL;
     void* file_data = NULL;
-    if(mode != FILE_MODE_READ){ //first implement writing to disk than this
+    if(mode == FILE_MODE_INVALID){ //first implement writing to disk than this
         res = -ENOTIMPLEMENTEDYET;
         return NULL;
     }
@@ -510,6 +581,16 @@ void* fat16_open(struct disk* disk, struct path_dir* path, FILE_MODE mode){
     struct path_dir* cur_dir = path;
     int32_t i = 0;
     struct fat_directory_item* cur_item = NULL;
+    f_desc = kzalloc(sizeof(struct fat_item_descriptor));
+    if(f_desc == NULL){
+        res = -ENOMEM;
+        goto out;
+    }
+    f_desc->upper_subdir = kzalloc(sizeof(struct fat_item_descriptor));
+    if(f_desc->upper_subdir == NULL){
+        res = -ENOMEM;
+        goto out;
+    }
     while(cur_dir != NULL){
         i = 0;
         for(;i < entries_num; i++){//find searched subdir name in cur_dir
@@ -550,6 +631,8 @@ void* fat16_open(struct disk* disk, struct path_dir* path, FILE_MODE mode){
                 res = -EIO;
                 goto out;
             }
+            memcpy(f_desc->upper_subdir, &items_in_dir[i], sizeof(struct fat_directory_item));
+            f_desc->index_in_subdir = i - 1;
             //code for determing type of file 
             entries_num = items_in_dir[i].filesize / sizeof(struct fat_directory_item);
             //check if something misses
@@ -558,11 +641,6 @@ void* fat16_open(struct disk* disk, struct path_dir* path, FILE_MODE mode){
             items_in_dir = (struct fat_directory_item*) file_data; //than data represent new entries
             //check more   
         }else{
-            f_desc = kzalloc(sizeof(struct fat_item_descriptor));
-            if(f_desc == NULL){
-                res = -ENOMEM;
-                goto out;
-            }
             f_desc->item = kzalloc(sizeof(struct fat_directory_item));
             memcpy(f_desc->item, cur_item, sizeof(struct fat_directory_item));
             f_desc->pos = 0;
@@ -577,6 +655,9 @@ void* fat16_open(struct disk* disk, struct path_dir* path, FILE_MODE mode){
     kfree(file_data);
     kfree(cur_item); //check this for error
     if(res < 0){
+        kfree(f_desc->item);
+        kfree(f_desc->upper_subdir);
+        kfree(f_desc);
         return NULL;
     }
     return f_desc;
@@ -731,23 +812,154 @@ int32_t fat16_stat(struct file_descriptor* f_desc, struct file_stats* f_stats){
 }
 
 int32_t fat16_close(struct file_descriptor* f_desc){
+    int32_t res;
     struct fat_item_descriptor* fat_desc = (struct fat_item_descriptor*)f_desc->private;
+    //update access date and time
+    //... 
+    //write file_item_entry to disk
+    uint32_t cluster_index = get_cluster_position(fat_desc->upper_subdir->high_16_bits_first_cluster, fat_desc->upper_subdir->low_16_bits_first_cluster);
+    struct fat_private* fat_private = (struct fat_private*)f_desc->disk->fs_private;
+    uint32_t data_start_pos = fat_private->root_directory.ending_sector_pos;
+    uint32_t file_entry_disk_pos = (data_start_pos + (cluster_index - 2) 
+    * fat_private->header.primary_header.sectrors_per_cluster) 
+    * f_desc->disk->sectors_size;
+    file_entry_disk_pos += fat_desc->index_in_subdir * sizeof(struct fat_directory_item);
+    set_disk_pos(fat_private->directory_stream, file_entry_disk_pos);
+    if(write_bytes_to_disk(fat_private->directory_stream, fat_desc->item, sizeof(struct fat_directory_item)) != ALL_OK){
+        res = -EIO;
+        goto out;    
+    }
     kfree(fat_desc->item);
     kfree(fat_desc);
     kfree(f_desc);
-    return 0;
+    out:
+    return res;
 }
 
 
 int32_t write_internal(struct disk* disk, struct fat_directory_item* file_item, void* buf, uint32_t file_pos, size_t n_memb, size_t block_size){
     int32_t bytes_written = 0;
     int32_t res = 0;
-
-    if(res){
-        
+    //some basic error check
+    if(n_memb < 0 || block_size < 0){
+        res = -EINVARG;
+        goto out;
     }
+    if(disk == NULL || file_item == NULL || buf == NULL){
+        res = -EINVARG;
+        goto out;
+    }
+    if(file_item->attribute & FAT16_FILE_SUBDIRECTORY){//if file is subdirectory
+        res = -EINVARG;
+        goto out;
+    }
+    int32_t bytes_to_write = n_memb * block_size;
+    struct fat_private* fat_private = disk->fs_private;
+    struct fat16_header* prim_header = &fat_private->header.primary_header;
+    uint32_t f_size = file_item->filesize;
+    int32_t cluster_sector_size = prim_header->sectrors_per_cluster;
+    int32_t cluster_size =  cluster_sector_size * disk->sectors_size;
+    uint32_t cluster_pos = get_cluster_position(file_item->high_16_bits_first_cluster, file_item->low_16_bits_first_cluster);
+    uint32_t data_clusters_start_pos = fat_private->root_directory.ending_sector_pos;
+    uint32_t num_of_clusters = f_size / cluster_size;
+    if(f_size % cluster_size || f_size == 0){
+        num_of_clusters++;
+    }
+    FAT_ENTRY* cluster_pointer = get_cluster_indexes(fat_private, file_item);
+    if(cluster_pointer == NULL){
+        res = -EIO;
+        goto out;
+    }
+    /*if(res | bytes_to_write){
+        ;
+    }*/
+    uint32_t left_to_write = bytes_to_write;
+    int32_t writing = cluster_size;
+    int32_t cluster_index = file_pos / cluster_size;
+    int32_t cluster_offset = file_pos % cluster_size;
+    void* buf_c = buf;
+    FAT_ENTRY cur_cluster_pointer;
+    while(left_to_write > 0){
+        if(cluster_index >= num_of_clusters){//fs need more clusters to write
+            //allocate new cluster for writing
+            FAT_ENTRY new_cluster_ind;
+            res = find_free_cluster(fat_private, (int32_t*)&new_cluster_ind);//gets free cluster
+            if(res < 0){
+                goto out;
+            }
+            uint32_t fat_entry_disk_pos = prim_header->reserved_sectors * MY_OS_DISK_SECTOR_SIZE + (cur_cluster_pointer + 2) * sizeof(FAT_ENTRY); 
+            for(int32_t i = 0; i < prim_header->fat_copies; i++){
+                //seting last fat entry to point to next one
+                set_disk_pos(fat_private->fat_read_stream, fat_entry_disk_pos);
+                if(write_bytes_to_disk(fat_private->fat_read_stream, &new_cluster_ind, sizeof(FAT_ENTRY)) != ALL_OK){
+                    res = -EIO;
+                    goto out;
+                }
+                fat_entry_disk_pos += prim_header->sectrors_per_fat * MY_OS_DISK_SECTOR_SIZE;
+            }
+            cur_cluster_pointer = new_cluster_ind;
+        }else{
+            cur_cluster_pointer = cluster_pointer[cluster_index]-2;
+            cluster_index++;
+        }
+        cluster_pos = data_clusters_start_pos + cur_cluster_pointer * cluster_sector_size;
+        set_disk_pos(fat_private->cluster_read_stream, cluster_pos * disk->sectors_size + cluster_offset);
+        if(left_to_write < cluster_size){ //reaching last cluster for writing
+            writing = left_to_write; 
+        }
+        if((cluster_offset != 0) && (cluster_offset + writing > cluster_size)){
+            writing = cluster_size - cluster_offset;
+        }
+        if(write_bytes_to_disk(fat_private->cluster_read_stream, buf_c, writing) != ALL_OK){
+            //writing one cluster at the time
+            res = -EIO;
+            goto out;
+        }
+        cluster_offset = 0;//every other cluster to write will be written from the start
+        buf_c += writing;
+        left_to_write -= writing; 
+    }
+    if(cluster_index < num_of_clusters){//there are unused clusters that could be freed
+        //free remaining clusters
+        uint32_t fat_entry_disk_pos = prim_header->reserved_sectors * MY_OS_DISK_SECTOR_SIZE + cluster_pointer[cluster_index - 1] * sizeof(FAT_ENTRY); 
+        FAT_ENTRY last_used_cluster_fat_entry = 0xFFFF;
+        for(int32_t i = 0; i < prim_header->fat_copies; i++){
+            //seting last used cluster entry as last
+            set_disk_pos(fat_private->fat_read_stream, fat_entry_disk_pos);
+            if(write_bytes_to_disk(fat_private->fat_read_stream, &last_used_cluster_fat_entry, sizeof(FAT_ENTRY)) != ALL_OK){
+                res = -EIO;
+                goto out;
+            }
+            fat_entry_disk_pos += prim_header->sectrors_per_fat * MY_OS_DISK_SECTOR_SIZE;
+        }
+        while(cluster_index < num_of_clusters){
+            fat_entry_disk_pos = prim_header->reserved_sectors * MY_OS_DISK_SECTOR_SIZE + cluster_pointer[cluster_index] * sizeof(FAT_ENTRY); 
+            FAT_ENTRY unused_cluster_fat_entry = 0;
+            for(int32_t i = 0; i < prim_header->fat_copies; i++){
+                //seting all left fat_entry as unused in all fat_copies
+                set_disk_pos(fat_private->fat_read_stream, fat_entry_disk_pos);
+                if(write_bytes_to_disk(fat_private->fat_read_stream, &unused_cluster_fat_entry, sizeof(FAT_ENTRY)) != ALL_OK){
+                    res = -EIO;
+                    goto out;
+                }
+                fat_entry_disk_pos += prim_header->sectrors_per_fat * MY_OS_DISK_SECTOR_SIZE;
+            }
+            cluster_index++;
+        }
+        
+    } 
+
+
 
     out:
+    if(res < 0){
+        //free ...
+        return 0;
+    }
+    bytes_written = bytes_to_write - left_to_write;
+    if(file_item->filesize < bytes_written + file_pos){
+        file_item->filesize = bytes_written + file_pos;
+    }
     return bytes_written;
 }
 

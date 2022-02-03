@@ -3,8 +3,8 @@
 global _start
 extern kernel_main
 
-CODE_SEG equ 0x08
-DATA_SEG equ 0x10
+CODE_SEG equ 0x08   ;index in gdt for kernel code segment
+DATA_SEG equ 0x10   ;index in gdt for kernel data segment
 
 
 _start:
@@ -21,12 +21,12 @@ _start:
     mov ebp, eax
     mov esp, ebp
 
-    ;A20 line enabled
+    ;A20 line enabled look for link ...
     in al, 0x92
     or al, 2
     out 0x92, al
 
-    ;init programable interupt contoler
+    ;init programable interupt contoler (PIC)
     cli
     mov al, 00010001b
     out 0x20, al; seting flags in pic (programmable interrupt )

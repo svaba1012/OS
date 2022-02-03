@@ -17,11 +17,11 @@
 #include "task.h"
 
 
-struct paging_4gb_chunk* kernel_chunk;
-struct disk_streamer* stream;
+struct paging_4gb_chunk* kernel_chunk; //this structure holds pointer for page directory
+struct disk_streamer* stream;   //kernel structure used for writing to and reading from disk
 
-struct tss tss;
-struct gdt gdt_real[MY_OS_NUM_OF_SEGMENTS];
+struct tss tss; //kernel task switch segment
+struct gdt gdt_real[MY_OS_NUM_OF_SEGMENTS]; //global descriptor table (gdt) (describes segments of memory)
 struct gdt_structured gdt_structured[MY_OS_NUM_OF_SEGMENTS] = {
     {.base = 0x00, .limit = 0x00, .type = 0x00},                // NULL Segment
     {.base = 0x00, .limit = 0xffffffff, .type = 0x9a},           // Kernel code segment
@@ -29,9 +29,7 @@ struct gdt_structured gdt_structured[MY_OS_NUM_OF_SEGMENTS] = {
     {.base = 0x00, .limit = 0xffffffff, .type = 0xf8},              // User code segment
     {.base = 0x00, .limit = 0xffffffff, .type = 0xf2},             // User data segment
     {.base = (uint32_t)&tss, .limit=sizeof(tss), .type = 0xE9}      // TSS Segment
-};
-
-char buf[512] = "I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind,I loved only you, the only one that is truly kind, only you  ";
+};  //human readable form of gdt
 
 void kernel_main(){
     //Set the terminal
@@ -63,10 +61,7 @@ void kernel_main(){
     tss_load(0x28);
     
     //find the first disk, set the filesystem and check which filesystem is on disk 0
-    disk_init();
-    //char buf_help[100];
-    
-    
+    disk_init();    
     
     filesystem_init();
     fs_resolve(get_disk_by_index(0));
@@ -76,20 +71,13 @@ void kernel_main(){
     paging_switch(paging_get_directory_from_4gb_chunk(kernel_chunk));
     enable_paging();
     
+
     //enable interrupts
-    //enable_interrupts();
+    enable_interrupts();
+
+    //simple check for reaching the end
     char str[40] = "Hello master at your service\n";
     print(str);
-    struct process* process;
-    int32_t res = process_load("0:/LOOP.BIN", &process);
-    if(res < 0){
-        panic("Can't load process\n");
-    }
-    uint8_t* ptr = process->data_ptr;
-    if(ptr){
-        ;
-    }
-    task_run_first_task_ever();
 
     
     return;
