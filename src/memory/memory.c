@@ -3,7 +3,7 @@
 
 //basic memory functionality
 
-void* memset(void* ptr, int c, size_t len){
+void* memset(void* ptr, int c, size_t len){ //setting all array elemnts to c
     char *p = (char*) ptr;
     for(int i = 0; i < len; i++){
         p[i] = (char) c;
@@ -23,6 +23,7 @@ int32_t memcmp(void* m1, void* m2, uint32_t maxlen){    //for comaparing two arr
 }
 
 int32_t switch_endians(int32_t num){
+    //transforming 4 byte data from one endian to another 
     int32_t switched_num;
     char* new_ptr, *ptr;
     ptr = (char*) &num;
@@ -33,7 +34,7 @@ int32_t switch_endians(int32_t num){
     return switched_num;
 }
 
-int32_t memcpy(void* dest, void* src, uint32_t maxlen){    
+int32_t memcpy(void* dest, void* src, uint32_t maxlen){//copy data from src array to dest array
     char* dest1 = (char*) dest;
     char* src1 = (char*) src;
     for(uint32_t i = 0; i < maxlen; i++){

@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include "terminal.h"
 
+/*interrupts functionality
+*/
+
 
 #define PIC1 0x20   // master pic
 #define PIC_EOI 0x20  // end of interrupt codd

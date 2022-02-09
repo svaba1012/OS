@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-//basic string functionality
+//basic string functionality, commonly defined in string.h 
 
 
 uint32_t strlen(char* str){
@@ -64,6 +64,7 @@ int32_t strncmp(char* str1, char* str2, int32_t n){
 }
 
 int32_t strncmp_terminating_char(char* str1, char* str2, int32_t n, char c){
+    //compare to strings similar as strncmp, but it can also see char c as terminating
     for(int32_t i = 0; i < n;){
         if(str1[i] != str2[i]){
             return str1[i] - str2[i];

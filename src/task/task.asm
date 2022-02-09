@@ -5,6 +5,8 @@ global restore_general_purpose_registers
 global task_return
 global user_registers
 
+;simulating interrupt handler call and pushing data to stack in exact order that it will be poped
+;after iret. After iret data poped will be set for user task to be run
 ; void task_return(struct registers* regs);
 task_return:
     mov ebp, esp
@@ -46,7 +48,9 @@ task_return:
 
     ; Let's leave kernel land and execute in user land!
     iretd
-    
+
+
+; set regs to values stored in structure *regs
 ; void restore_general_purpose_registers(struct registers* regs);
 restore_general_purpose_registers:
     push ebp
@@ -62,6 +66,8 @@ restore_general_purpose_registers:
     pop ebp
     ret
 
+
+;set segment regs for user descriptor
 ; void user_registers()
 user_registers:
     mov ax, 0x23

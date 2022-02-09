@@ -1,8 +1,12 @@
 #include "gdt.h"
 #include "terminal.h"
 
+//functins to build struct gdt from struct gdt_structured
+
 void encodeGdtEntry(uint8_t* target, struct gdt_structured source)
-{
+{   
+
+    //encode source as human readable gdt to real gdt and saves it to target
     if ((source.limit > 65536) && ((source.limit & 0xFFF) != 0xFFF))
     {
         panic("encodeGdtEntry: Invalid argument\n");
@@ -32,7 +36,7 @@ void encodeGdtEntry(uint8_t* target, struct gdt_structured source)
 }
 
 void gdt_structured_to_gdt(struct gdt* gdt, struct gdt_structured* structured_gdt, int total_entires)
-{
+{   //encode whole gdt_struct array to struct gdt
     for (int i = 0; i < total_entires; i++)
     {
         encodeGdtEntry((uint8_t*)&gdt[i], structured_gdt[i]);

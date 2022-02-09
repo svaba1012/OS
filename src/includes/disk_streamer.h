@@ -1,8 +1,13 @@
 #ifndef DISK_STREAMER_H
 #define DISK_STREAMER_H
 
+/*basic functionality for reading and writing 
+any amount of bytes from any loacation to and from the disk*/
+
 #include "disk.h"
 
+//structure defines which disk is read to or written from
+//also it holds current position in the disk from where reading or writing start  
 struct disk_streamer{
     struct disk* disk;
     uint64_t pos;

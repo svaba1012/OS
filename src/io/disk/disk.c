@@ -3,6 +3,7 @@
 #include "status.h"
 #include "memory.h"
 
+
 struct disk disk;
 
 

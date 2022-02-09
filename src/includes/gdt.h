@@ -1,6 +1,10 @@
 #ifndef GDT_H
 #define GDT_H
 #include <stdint.h>
+
+//global descriptor table functionality for setting new and loading it
+
+//structure of one descriptor that describes one segment
 struct gdt
 {
     uint16_t segment;
@@ -11,11 +15,12 @@ struct gdt
     uint8_t base_24_31_bits;
 }__attribute__((packed));
 
-struct gdt_structured
+//human readable gdt struct thats transform to struct gdt via  gdt_structured_to_gdt function
+struct gdt_structured 
 {
-    uint32_t base;
-    uint32_t limit;
-    uint8_t type;
+    uint32_t base;      //start address of segment
+    uint32_t limit;     //size of segment
+    uint8_t type;       //type of segments (flags)
 };
 
 void gdt_load(struct gdt* gdt, int size);

@@ -4,9 +4,14 @@
 #include "disk.h"
 #include "pathparser.h"
 
+/*defines virtul filesystem (VFS) functionality
+*/
+
+//mode for setting position in file via fseek function
 typedef uint32_t FILE_SEEK_MODE;
 enum SEEK_MODE{SEEK_SET, SEEK_CUR, SEEK_END};
 
+//mode for opening the file
 typedef uint32_t FILE_MODE;
 enum FM{FILE_MODE_READ, FILE_MODE_WRITE, FILE_MODE_APPEND, FILE_MODE_INVALID};
 
@@ -14,19 +19,19 @@ struct disk;
 struct file_descriptor;
 struct file_stats;
 
+//defines new types for function pointer for basic file functions 
+//which will point to functions of any supported filesystem that's on the disk  
 typedef void*(*FS_OPEN_FUNCTION)(struct disk* disk, struct path_dir* path, FILE_MODE mode);
 typedef int32_t (*FS_RESOLVE_FUNCTION)(struct disk* disk);
 typedef int32_t (*FS_READ_FUNCTION)(void* buf, size_t block_size, size_t n_memb, struct file_descriptor* f_desc);
-typedef int32_t (*FS_STAT_FUNCTION)(struct file_descriptor* f_desc, struct file_stats* f_stats);//?
-typedef int32_t (*FS_SEEK_FUNCTION)(struct file_descriptor* f_desc, int32_t offset, int32_t pos);//+
-typedef int32_t (*FS_CLOSE_FUNCTION)(struct file_descriptor* f_desc);//?
-
+typedef int32_t (*FS_STAT_FUNCTION)(struct file_descriptor* f_desc, struct file_stats* f_stats);
+typedef int32_t (*FS_SEEK_FUNCTION)(struct file_descriptor* f_desc, int32_t offset, int32_t pos);
+typedef int32_t (*FS_CLOSE_FUNCTION)(struct file_descriptor* f_desc);
 typedef int32_t (*FS_WRITE_FUNCTION)(void* buf, size_t block_size, size_t n_memb, struct file_descriptor* f_desc);
 
 
-
-
-struct filesystem{
+//structure holds pointers to file functions that are process the file from that filesystem 
+struct filesystem{        
     FS_RESOLVE_FUNCTION resolve; //return 0 if disk is usable
     FS_OPEN_FUNCTION open;
     FS_READ_FUNCTION read;
@@ -37,13 +42,17 @@ struct filesystem{
     char name[20];
 };
 
+//holds information about opened files
 struct file_descriptor{
     uint32_t index; //descriptor number
-    void* private;
-    struct filesystem* fs;
-    struct disk* disk;
+    void* private;  //private data, type depends of filesystem, holds info that certain filesystem uses
+                    //to faster process this file
+    struct filesystem* fs;  //filesystem in which this file is stored
+    struct disk* disk;      //disk on which this file is stored
 };
 
+
+//holds some stats (info) about file such as creation date, size ...
 struct file_stats{
     uint32_t file_size;
     uint8_t creation_day;
@@ -75,7 +84,5 @@ int32_t fclose(uint32_t fd);
 int32_t fwrite(void* buf, size_t block_size, int32_t num_of_blocks, uint32_t fd);
 
 //implement more file functionality
-
-
 
 #endif

@@ -5,12 +5,16 @@
 #include "task.h"
 #include <stdint.h>
 
+//process functionality 
+//this implementation supports multithreading
+
 enum{BIN, ELF}; //type of exe file
 
+//structure that holds basic info about process
 struct process{
-    uint16_t id;
-    char filename[MY_OS_PATH_MAX_LEN];
-    struct task* main_task;
+    uint16_t id;                            //process index
+    char filename[MY_OS_PATH_MAX_LEN];      //file name of process code
+    struct task* main_task;                 //main task of process
     //saved ptr to all process allocations
     void* allocations[MY_OS_MAX_USER_ALLOCATIONS];
 

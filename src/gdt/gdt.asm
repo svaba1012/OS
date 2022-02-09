@@ -1,6 +1,8 @@
 section .asm
 global gdt_load
 
+;load gdt 
+;void gdt_load(struct gdt* gdt, int size);
 gdt_load:
     mov eax, [esp+4]
     mov [gdt_descriptor + 2], eax

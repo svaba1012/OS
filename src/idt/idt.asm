@@ -1,5 +1,6 @@
 section .asm
 
+
 global load_idt
 global int0h
 global enable_interrupts
@@ -27,6 +28,8 @@ disable_interrupts:
     pop ebp
     ret
 
+;load idt drom adr
+;extern void load_idt(struct idtr_desc* adr);
 load_idt:
     push ebp
     mov ebp, esp
@@ -35,6 +38,8 @@ load_idt:
     pop ebp
     ret
 
+
+;wrapper interrupt handlers that call certain function in c 
 int0h:
     cli
     pushad

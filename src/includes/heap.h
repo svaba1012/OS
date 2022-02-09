@@ -3,6 +3,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/*heap functionality
+functionality for allocating memory 
+*/
+
 typedef unsigned char HEAP_BLOCK_TABLE_ENTRY;
 
 struct heap_table{
@@ -11,7 +15,7 @@ struct heap_table{
 };
 
 struct  heap{
-    struct heap_table* table;
+    struct heap_table* table;   //pointer to table of this heap
     void* start_adress; //start adress
 };
 

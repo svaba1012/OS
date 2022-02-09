@@ -2,6 +2,7 @@
 #define STATUS_H
 
 //error codes
+//error codes used as return values of some functions to differ errors that function runs into
 
 #define ALL_OK 0
 #define EIO 1 

@@ -1,11 +1,15 @@
 #ifndef TASK_H
 #define TASK_H
 
+//task functionality
+
 #include "config.h"
 #include "paging.h"
 #include <stdint.h>
 #include "process.h"
 
+
+//used to save states of all registers
 struct registers
 {
     uint32_t edi;
@@ -23,6 +27,8 @@ struct registers
     uint32_t ss;
 }__attribute__((packed));
 
+
+//structure that holds all necesserry info about task
 struct task
 {
     /**

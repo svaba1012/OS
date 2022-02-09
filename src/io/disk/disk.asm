@@ -3,6 +3,8 @@ section .asm
 global ata_lba_write
 global ata_lba_read
 
+;write num_of_sec sectors starting with lba index from buf addres
+;extern void ata_lba_write(uint32_t lba, uint32_t num_of_sec, void* buf)
 
 ata_lba_write:
     push ebp
@@ -71,6 +73,9 @@ ata_lba_write:
     ret
 
 
+;read num_of_sec sectrors starting with lba index to buf addres
+;return 0 if read is successfull otherwise return 1
+;extern int32_t ata_lba_read(uint32_t lba, uint32_t num_of_sec, void* buf)
 
 ata_lba_read:
     push ebp

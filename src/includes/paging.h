@@ -1,6 +1,9 @@
 #ifndef PAGING_H
 #define PAGING_H
 
+/*virtual memory and paging functionality 
+*/
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -13,6 +16,7 @@
 #define PAGING_ONE_TABLE_MEM_COVERAGE 0x400000
 #define PAGING_PAGE_NUM 1024
 
+//structured address of directory of page tables 
 struct paging_4gb_chunk{
     uint32_t* directory_entry;
 };

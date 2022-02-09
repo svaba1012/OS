@@ -2,6 +2,8 @@
 #define TERMINAL_H
 #include <stdint.h>
 
+//functins for printing text to the screen 
+
 #define TERMINAL_WIDTH 80
 #define TERMINAL_HEIGHT 20
 #define VGA_ADDR_START 0xb8000

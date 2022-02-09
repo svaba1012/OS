@@ -1,7 +1,12 @@
 #ifndef TASKSWITCHSEGMENT_H
 #define TASKSWITCHSEGMENT_H
 
+//task switch segment functionality
+
 #include <stdint.h>
+
+//strcucture which holds everything needed by processor to switch task
+//its addres is saved in gdt for starting addres of task switch segment
 struct tss
 {
     uint32_t link;

@@ -3,18 +3,22 @@
 #include <stddef.h>
 #include "string.h"
 
-#define MAX_BASE_NUM_SYSTEM 30
+//basic terminal functionality for printing text on the screen
 
-uint8_t vga_color; 
-uint16_t* video_mem;
-uint16_t terminal_col;
-uint16_t terminal_row;
+
+//maximum base number for print_num fuction
+#define MAX_BASE_NUM_SYSTEM 30  
+
+uint8_t vga_color; //color of the characters
+uint16_t* video_mem;    //start address of memory mapped to video commonly 0xb8000
+uint16_t terminal_col;  //current column in the terminal
+uint16_t terminal_row;  //current row in the terminal
 
 uint16_t terminal_make_char(char c, char color){ //combining char ASCII value with char color
     return (color << 8) | c;        
 }
 
-void terminal_init(){    //erasing the screen
+void terminal_init(){    //erasing (cleaning) the screen
     video_mem = (uint16_t*) VGA_ADDR_START;
     terminal_col = 0;
     terminal_row = 0;
@@ -23,21 +27,21 @@ void terminal_init(){    //erasing the screen
     }
 }
 
-void terminal_putchar(uint16_t x, uint16_t y, char c){
+void terminal_putchar(uint16_t x, uint16_t y, char c){ //write char c to x column and y row
     video_mem[y * TERMINAL_WIDTH + x] = terminal_make_char(c, vga_color);
     return;
 }
 
-void terminal_writechar(char c){
-    if(c == '\n'){
+void terminal_writechar(char c){ //write char c to current column and row position
+    if(c == '\n'){  //if c is new line char increment the row and reset the column
         terminal_row++;
         terminal_col = 0;
         return;
     }
     terminal_putchar(terminal_col, terminal_row, c);
     terminal_col++;
-    if(terminal_col == TERMINAL_WIDTH){
-        terminal_col = 0;
+    if(terminal_col == TERMINAL_WIDTH){  //if end of row reached
+        terminal_col = 0;       //jump to begginig of next row
         terminal_row++;
     }
     return;
@@ -49,7 +53,7 @@ void set_color(uint8_t color){  // setting global color
 }
 
 
-void print(char* str){
+void print(char* str){      //print message str
     for(char* p = str; *p; p++){
         terminal_writechar(*p);
     }
@@ -57,7 +61,7 @@ void print(char* str){
 }
 
 void print_num(int32_t num, uint32_t base){
-    //printing int numbers in base number system, suported number system base<17
+    //printing int numbers in base number system, suported number system base<30
     if(base > MAX_BASE_NUM_SYSTEM){
         print("Unsuported base for number system \n");
         return;
@@ -66,7 +70,7 @@ void print_num(int32_t num, uint32_t base){
         print("0");
         return;
     }
-    char digits[TERMINAL_WIDTH];
+    char digits[TERMINAL_WIDTH]; //for digits of num
     char digit;
     uint32_t num_len = 0;
     if(num < 0){    //if the num is negative print - 
@@ -101,6 +105,8 @@ void print_num(int32_t num, uint32_t base){
 }
 
 void panic(char* msg){
+    //print the message and stop the system
+    //used for reaching unalowed places in code
     print(msg);
     while(1){
         ;
